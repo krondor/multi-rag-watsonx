@@ -10,3 +10,7 @@ langchain-community
 python-docx 
 python-pptx
 huggingface-hub
+PyYAML
+xml
+beautifulsoup4
+pandas
