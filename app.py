@@ -131,8 +131,7 @@ parameters = {
 }
 
 # Display setup status
-status_placeholder = st.empty()
-status_placeholder.markdown("**Setting up Watsonx...**")
+st.info("Setting up Watsonx...")
 
 try:
     # Initialize WatsonxLLM with project_id
