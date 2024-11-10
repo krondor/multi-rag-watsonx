@@ -56,7 +56,7 @@ class PptxLoader:
 @st.cache_resource
 def load_file(file_name, file_type):
     loaders = []
-    
+
     if file_type == "pdf":
         loaders = [PyPDFLoader(file_name)]
     elif file_type == "docx":
@@ -106,7 +106,7 @@ with st.sidebar:
     decoding_method = st.radio("Decoding Method", [DecodingMethods.GREEDY.value, DecodingMethods.SAMPLE.value])
     st.info("Upload a PDF, DOCX, TXT, or PPTX file for RAG")
     uploaded_file = st.file_uploader("Upload file", accept_multiple_files=False, type=["pdf", "docx", "txt", "pptx"])
-    
+
     if uploaded_file:
         bytes_data = uploaded_file.read()
         st.write("Filename:", uploaded_file.name)
@@ -115,7 +115,7 @@ with st.sidebar:
         file_type = uploaded_file.name.split('.')[-1].lower()
         index = load_file(uploaded_file.name, file_type)
 
-# Watsonx Model setup
+# Watsonx Model setup with UI feedback
 credentials = {
     "url": watsonx_url,
     "apikey": watsonx_api_key
@@ -130,10 +130,22 @@ parameters = {
     GenParams.REPETITION_PENALTY: 1.0
 }
 
-# Initialize WatsonxLLM with project_id
-model = WatsonxLLM(
-    model=Model(model_name, credentials, parameters, project_id=watsonx_project_id)
-)
+# Display setup status
+status_placeholder = st.empty()
+status_placeholder.markdown("**Setting up Watsonx...**")
+
+try:
+    # Initialize WatsonxLLM with project_id
+    model = WatsonxLLM(
+        model=Model(model_name, credentials, parameters, project_id=watsonx_project_id)
+    )
+    status_placeholder.markdown(f"**Model [{model_name}] ready.**")
+except Exception as e:
+    st.error(f"Failed to initialize model: {str(e)}")
+    status_placeholder.markdown("**Failed to set up Watsonx. Check your credentials.**")
+
+# Final UI Status
+status_placeholder.markdown("**Chat ready.**")
 
 # Chat History Setup
 if "messages" not in st.session_state:
