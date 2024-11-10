@@ -8,6 +8,7 @@ import yaml
 from bs4 import BeautifulSoup
 from pptx import Presentation
 from docx import Document
+from dotenv import load_dotenv
 
 from langchain.document_loaders import PyPDFLoader, TextLoader
 from langchain.indexes import VectorstoreIndexCreator
@@ -22,9 +23,12 @@ from ibm_watson_machine_learning.foundation_models.extensions.langchain import W
 from ibm_watson_machine_learning.metanames import GenTextParamsMetaNames as GenParams
 from ibm_watson_machine_learning.foundation_models.utils.enums import DecodingMethods
 
-# Initialize index to None
+# Load environment variables from .env file
+load_dotenv()
+
+# Initialize index and chain to None
 index = None
-rag_chain = None  # Initialize rag_chain as None by default
+rag_chain = None
 
 # Custom loader for DOCX files
 class DocxLoader:
@@ -49,16 +53,11 @@ class PptxLoader:
 # Custom loader for additional file types
 def load_csv(file_path):
     df = pd.read_csv(file_path)
-    # Adding pagination for large CSV data
-    st.write("Large dataset detected, displaying data in pages.")
-    page_size = 100  # Define the number of rows per page
+    page_size = 100
     page_number = st.number_input("Page number", min_value=1, max_value=(len(df) // page_size) + 1, step=1, value=1)
-    
     start_index = (page_number - 1) * page_size
     end_index = start_index + page_size
-    paginated_data = df.iloc[start_index:end_index]
-    
-    st.dataframe(paginated_data)  # Display paginated data
+    st.dataframe(df.iloc[start_index:end_index])
     return df.to_string(index=False)
 
 def load_json(file_path):
@@ -85,6 +84,7 @@ def load_html(file_path):
 @st.cache_resource
 def load_file(file_name, file_type):
     loaders = []
+    text = None
 
     if file_type == "pdf":
         loaders = [PyPDFLoader(file_name)]
@@ -110,17 +110,20 @@ def load_file(file_name, file_type):
         st.error("Unsupported file type.")
         return None
 
-    # Use TextLoader for intermediate text files from custom loaders
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as temp_file:
-        temp_file.write(text.encode("utf-8"))
-        temp_file_path = temp_file.name
-    loaders = [TextLoader(temp_file_path)]
+    if text:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as temp_file:
+            temp_file.write(text.encode("utf-8"))
+            temp_file_path = temp_file.name
+        loaders = [TextLoader(temp_file_path)]
 
-    index = VectorstoreIndexCreator(
-        embedding=HuggingFaceEmbeddings(model_name="all-MiniLM-L12-v2"),
-        text_splitter=RecursiveCharacterTextSplitter(chunk_size=450, chunk_overlap=50)
-    ).from_loaders(loaders)
-    return index
+    if loaders:
+        index = VectorstoreIndexCreator(
+            embedding=HuggingFaceEmbeddings(model_name="all-MiniLM-L12-v2"),
+            text_splitter=RecursiveCharacterTextSplitter(chunk_size=450, chunk_overlap=50)
+        ).from_loaders(loaders)
+        st.success("Index created successfully!")
+        return index
+    return None
 
 # Watsonx API setup
 watsonx_api_key = os.getenv("WATSONX_API_KEY")
@@ -158,14 +161,12 @@ with st.sidebar:
     }
     st.info("Upload a file to use RAG")
     uploaded_file = st.file_uploader("Upload file", accept_multiple_files=False, type=["pdf", "docx", "txt", "pptx", "csv", "json", "xml", "yaml", "html"])
-    
+
     if uploaded_file is not None:
         bytes_data = uploaded_file.read()
         st.write("Filename:", uploaded_file.name)
-        
         with open(uploaded_file.name, 'wb') as f:
             f.write(bytes_data)
-
         file_type = uploaded_file.name.split('.')[-1].lower()
         index = load_file(uploaded_file.name, file_type)
 
@@ -211,10 +212,4 @@ prompt = st.chat_input("Ask your question here", disabled=False if chain else Tr
 if prompt:
     st.chat_message("user").markdown(prompt)
     if rag_chain:
-        response_text = rag_chain.run(prompt).strip()
-    else:
-        response_text = chain.run(question=prompt, context="").strip()
-        
-    st.session_state.messages.append({'role': 'User', 'content': prompt})
-    st.chat_message("assistant").markdown(response_text)
-    st.session_state.messages.append({'role': 'Assistant', 'content': response_text})
+        response
