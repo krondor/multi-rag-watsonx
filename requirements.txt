@@ -14,3 +14,4 @@ PyYAML
 watchdog
 beautifulsoup4
 pandas
+python-dotenv
