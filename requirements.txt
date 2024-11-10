@@ -9,3 +9,4 @@ langchain-ibm
 langchain-community
 python-docx 
 python-pptx
+huggingface-hub
