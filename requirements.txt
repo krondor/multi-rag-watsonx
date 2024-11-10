@@ -11,6 +11,6 @@ python-docx
 python-pptx
 huggingface-hub
 PyYAML
-xml
+watchdog
 beautifulsoup4
 pandas
