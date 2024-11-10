@@ -1,0 +1,11 @@
+langchain
+streamlit
+ibm_watson_machine_learning
+pypdf
+sentence-transformers
+chromadb
+watchdog
+langchain-ibm
+langchain-community
+python-docx 
+python-pptx
