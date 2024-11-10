@@ -129,10 +129,11 @@ parameters = {
     GenParams.TOP_P: 1,
     GenParams.REPETITION_PENALTY: 1.0
 }
-model = WatsonxLLM(
-    model=Model(model_name, credentials, parameters)
-)
 
+# Initialize WatsonxLLM with project_id
+model = WatsonxLLM(
+    model=Model(model_name, credentials, parameters, project_id=watsonx_project_id)
+)
 
 # Chat History Setup
 if "messages" not in st.session_state:
