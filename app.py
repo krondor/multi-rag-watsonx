@@ -8,7 +8,6 @@ import yaml
 from bs4 import BeautifulSoup
 from pptx import Presentation
 from docx import Document
-from dotenv import load_dotenv
 
 from langchain.document_loaders import PyPDFLoader, TextLoader
 from langchain.indexes import VectorstoreIndexCreator
@@ -22,9 +21,6 @@ from ibm_watson_machine_learning.foundation_models import Model
 from ibm_watson_machine_learning.foundation_models.extensions.langchain import WatsonxLLM
 from ibm_watson_machine_learning.metanames import GenTextParamsMetaNames as GenParams
 from ibm_watson_machine_learning.foundation_models.utils.enums import DecodingMethods
-
-# Load environment variables from .env file
-load_dotenv()
 
 # Initialize index and chain to None
 index = None
@@ -106,6 +102,8 @@ def load_file(file_name, file_type):
         text = load_yaml(file_name)
     elif file_type == "html":
         text = load_html(file_name)
+    elif file_type == "htm":
+        text = load_html(file_name)    
     else:
         st.error("Unsupported file type.")
         return None
@@ -126,7 +124,7 @@ def load_file(file_name, file_type):
     return None
 
 # Watsonx API setup
-watsonx_api_key = os.getenv("WATSONX_API_KEY")
+watsonx_api_key =  os.getenv("WATSONX_API_KEY")
 watsonx_project_id = os.getenv("WATSONX_PROJECT_ID")
 
 if not watsonx_api_key or not watsonx_project_id:
@@ -145,7 +143,7 @@ I am a helpful assistant.
 )
 
 with st.sidebar:
-    st.title("Watsonx RAG with Multiple docs")
+    st.title("Watsonx RAG: Multi-Document Retrieval")
     watsonx_model = st.selectbox("Model", ["meta-llama/llama-3-405b-instruct", "codellama/codellama-34b-instruct-hf", "ibm/granite-20b-multilingual"])
     max_new_tokens = st.slider("Max output tokens", min_value=100, max_value=4000, value=600, step=100)
     decoding_method = st.radio("Decoding", (DecodingMethods.GREEDY.value, DecodingMethods.SAMPLE.value))
@@ -212,4 +210,11 @@ prompt = st.chat_input("Ask your question here", disabled=False if chain else Tr
 if prompt:
     st.chat_message("user").markdown(prompt)
     if rag_chain:
-        response
+        response_text = rag_chain.run(prompt).strip()
+    else:
+        response_text = chain.run(question=prompt, context="").strip()
+        
+    st.session_state.messages.append({'role': 'User', 'content': prompt})
+    st.chat_message("assistant").markdown(response_text)
+    st.session_state.messages.append({'role': 'Assistant', 'content': response_text})
+
