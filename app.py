@@ -19,6 +19,8 @@ from docx import Document
 
 # Load environment variables
 load_dotenv()
+
+# Watsonx API setup
 watsonx_api_key = os.getenv("API_KEY")
 watsonx_project_id = os.getenv("PROJECT_ID")
 watsonx_url = "https://us-south.ml.cloud.ibm.com"
@@ -52,78 +54,94 @@ class PptxLoader:
 
 # Caching function to load various file types
 @st.cache_resource
-def load_file(file_name, file_type):
+def load_file(uploaded_file, file_type):
     loaders = []
+
+    # Save uploaded file to a temporary path
+    with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_type}") as temp_file:
+        temp_file.write(uploaded_file.read())
+        temp_file_path = temp_file.name
+
     if file_type == "pdf":
-        loaders = [PyPDFLoader(file_name)]
+        loaders = [PyPDFLoader(temp_file_path)]
     elif file_type == "docx":
-        text = DocxLoader(file_name).load()
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as temp_file:
-            temp_file.write(text.encode("utf-8"))
-            loaders = [TextLoader(temp_file.name)]
+        loader = DocxLoader(temp_file_path)
+        text = loader.load()
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as temp_txt_file:
+            temp_txt_file.write(text.encode("utf-8"))
+            temp_txt_file_path = temp_txt_file.name
+        loaders = [TextLoader(temp_txt_file_path)]
     elif file_type == "txt":
-        loaders = [TextLoader(file_name)]
+        loaders = [TextLoader(temp_file_path)]
     elif file_type == "pptx":
-        text = PptxLoader(file_name).load()
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as temp_file:
-            temp_file.write(text.encode("utf-8"))
-            loaders = [TextLoader(temp_file.name)]
+        loader = PptxLoader(temp_file_path)
+        text = loader.load()
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as temp_txt_file:
+            temp_txt_file.write(text.encode("utf-8"))
+            temp_txt_file_path = temp_txt_file.name
+        loaders = [TextLoader(temp_txt_file_path)]
     else:
         st.error("Unsupported file type.")
         return None
 
+    # Create the index with the loaded documents
     index = VectorstoreIndexCreator(
         embedding=HuggingFaceEmbeddings(model_name="all-MiniLM-L12-v2"),
         text_splitter=RecursiveCharacterTextSplitter(chunk_size=450, chunk_overlap=50)
     ).from_loaders(loaders)
+
     return index
 
-# Prompt Template
+# Prompt template
 prompt_template = PromptTemplate(
     input_variables=["context", "question"], 
     template="""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
 I am a helpful assistant.
+
 <|eot_id|>
 {context}
 <|start_header_id|>user<|end_header_id|>
-{question}<|eot_id|>"""
+{question}<|eot_id|>
+"""
 )
 
 # Sidebar settings
 with st.sidebar:
     st.title("Watsonx RAG Demo")
-    st.info("Setting up Watsonx configuration")
     model_name = st.selectbox("Model", ["meta-llama/llama-3-405b-instruct", "codellama/codellama-34b-instruct-hf", "ibm/granite-20b-multilingual"])
     max_new_tokens = st.slider("Max output tokens", min_value=100, max_value=1000, value=300, step=100)
     decoding_method = st.radio("Decoding Method", [DecodingMethods.GREEDY.value, DecodingMethods.SAMPLE.value])
-    uploaded_file = st.file_uploader("Upload file (PDF, DOCX, TXT, PPTX)", accept_multiple_files=False)
+    st.info("Upload a PDF, DOCX, TXT, or PPTX file for RAG")
+    uploaded_file = st.file_uploader("Upload file", accept_multiple_files=False, type=["pdf", "docx", "txt", "pptx"])
 
     if uploaded_file:
-        with st.spinner("Processing file..."):
-            file_type = uploaded_file.name.split('.')[-1].lower()
-            index = load_file(uploaded_file.name, file_type)
-        st.success("File processed and indexed")
+        file_type = uploaded_file.name.split('.')[-1].lower()
+        index = load_file(uploaded_file, file_type)
 
-# Watsonx Model setup
-params = {
+# Watsonx Model setup with UI feedback
+credentials = {
+    "url": watsonx_url,
+    "apikey": watsonx_api_key
+}
+parameters = {
     GenParams.DECODING_METHOD: decoding_method,
     GenParams.MAX_NEW_TOKENS: max_new_tokens,
     GenParams.MIN_NEW_TOKENS: 1,
-    GenParams.TEMPERATURE: 0,
+    GenParams.TEMPERATURE: 0.7,
     GenParams.TOP_K: 50,
     GenParams.TOP_P: 1,
-    GenParams.REPETITION_PENALTY: 1
+    GenParams.REPETITION_PENALTY: 1.0
 }
 
-st.info("Initializing Watsonx model...")
-model = None
+# Display setup status
+status_placeholder = st.empty()
+status_placeholder.markdown("**Setting up Watsonx...**")
+
 try:
-    model = WatsonxLLM(
-        model=Model(model_name, {"url": watsonx_url, "apikey": watsonx_api_key}, params, project_id=watsonx_project_id)
-    )
-    st.success(f"Model [{model_name}] is ready")
+    model = WatsonxLLM(Model(model_name, credentials, parameters, project_id=watsonx_project_id))
+    status_placeholder.markdown(f"**Model [{model_name}] ready.**")
 except Exception as e:
-    st.error(f"Model initialization failed: {str(e)}")
+    st.error(f"Failed to initialize model: {str(e)}")
 
 # Chat History Setup
 if "messages" not in st.session_state:
@@ -134,14 +152,12 @@ for message in st.session_state.messages:
     st.chat_message(message["role"]).markdown(message["content"])
 
 # User Input
-prompt = st.chat_input("Ask your question here", disabled=not model)
+prompt = st.chat_input("Ask your question here", disabled=False if model else True)
 
-# Handle User Query
+# Process User Input
 if prompt:
     st.chat_message("user").markdown(prompt)
 
-    # Generate Response
-    response_text = ""
     if index:
         rag_chain = RetrievalQA.from_chain_type(
             llm=model,
@@ -150,12 +166,11 @@ if prompt:
             chain_type_kwargs={"prompt": prompt_template},
             verbose=True
         )
-        response_text = rag_chain.run(prompt)
+        response_text = rag_chain.run(prompt).strip()
     else:
-        llm_chain = LLMChain(llm=model, prompt=prompt_template)
-        response_text = llm_chain.run(context="", question=prompt)
+        chain = LLMChain(llm=model, prompt=prompt_template)
+        response_text = chain.run(context="", question=prompt).strip("<|start_header_id|>assistant<|end_header_id|>").strip("<|eot_id|>")
 
-    response_text = response_text.strip()
-    st.session_state.messages.append({'role': 'User', 'content': prompt})
+    st.session_state.messages.append({'role': 'user', 'content': prompt})
     st.chat_message("assistant").markdown(response_text)
-    st.session_state.messages.append({'role': 'Assistant', 'content': response_text})
+    st.session_state.messages.append({'role': 'assistant', 'content': response_text})
