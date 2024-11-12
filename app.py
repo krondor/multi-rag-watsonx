@@ -22,7 +22,7 @@ from ibm_watson_machine_learning.foundation_models.extensions.langchain import W
 from ibm_watson_machine_learning.metanames import GenTextParamsMetaNames as GenParams
 from ibm_watson_machine_learning.foundation_models.utils.enums import DecodingMethods
 
-# Initialize index and chain to None
+# Initialize index and chain to None1
 index = None
 rag_chain = None
 
