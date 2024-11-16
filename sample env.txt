@@ -1,0 +1,2 @@
+WATSONX_API_KEY=<your_watsonx_api_key>
+WATSONX_PROJECT_ID=<your_watsonx_project_id>

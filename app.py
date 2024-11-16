@@ -5,6 +5,7 @@ import pandas as pd
 import json
 import xml.etree.ElementTree as ET
 import yaml
+from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 from pptx import Presentation
 from docx import Document
@@ -124,6 +125,8 @@ def load_file(file_name, file_type):
     return None
 
 # Watsonx API setup
+load_dotenv()
+
 watsonx_api_key =  os.getenv("WATSONX_API_KEY")
 watsonx_project_id = os.getenv("WATSONX_PROJECT_ID")
 
