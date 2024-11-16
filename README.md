@@ -13,7 +13,12 @@ pinned: false
 
 **A Streamlit-powered app for querying multiple document types using Watsonx and LangChain.**
 
-This project allows users to upload various file formats (PDFs, DOCX, CSV, JSON, YAML, HTML, etc.) and retrieve contextually accurate responses using Watsonx LLM models and LangChain. The app provides a seamless interface to perform retrieval-augmented generation (RAG) from uploaded documents.[Live-app](https://huggingface.co/spaces/RAHMAN00700/Chat-with-Multiple-Documents-Using-Streamlit-and-Watsonx)
+This project allows users to upload various file formats (PDFs, DOCX, CSV, JSON, YAML, HTML, etc.) and retrieve contextually accurate responses using Watsonx LLM models and LangChain. The app provides a seamless interface to perform retrieval-augmented generation (RAG) from uploaded documents.
+
+**Note**: While this app runs efficiently on machines with low specifications, for faster indexing and response times, I recommend using a more powerful machine.
+
+## Live App
+[Link to live app](https://huggingface.co/spaces/RAHMAN00700/Chat-with-Multiple-Documents-Using-Streamlit-and-Watsonx)
 
 ![GUI image](assets/Screenshot_31.jpg)
 ---
@@ -123,6 +128,10 @@ We welcome contributions! If you'd like to improve this project:
 5. Open a Pull Request.
 
 ---
+
+## More Blogs and Interesting Projects
+
+For more blogs and interesting projects, visit my personal website: [https://abdulrahmanh.com](https://abdulrahmanh.com)
 
 ## License
 
