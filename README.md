@@ -1,5 +1,5 @@
 ---
-title: Chat Multi4 Doc
+title: Chat-with-Multiple-Documents-Using-Streamlit-and-Watsonx
 emoji: 😻
 colorFrom: purple
 colorTo: pink
