@@ -9,7 +9,7 @@ app_file: app.py
 pinned: false
 ---
 
-# Multi-Document Retrieval with Watsonx
+# Multi-Document Retrieval with Watsonx 😻
 
 **A Streamlit-powered app for querying multiple document types using Watsonx and LangChain.**
 
@@ -20,7 +20,7 @@ This project allows users to upload various file formats (PDFs, DOCX, CSV, JSON,
 ## Live App
 [Link to live app](https://huggingface.co/spaces/RAHMAN00700/Chat-with-Multiple-Documents-Using-Streamlit-and-Watsonx)
 
-![GUI image](assets/Screenshot_31.jpg)
+![GUI image](assets/1.jpg)
 ---
 
 ## Features
@@ -50,6 +50,7 @@ Follow these steps to clone and run the project locally:
 git clone https://github.com/Abd-al-RahmanH/Multi-Doc-Retrieval-Watsonx.git
 cd Multi-Doc-Retrieval-Watsonx
 ```
+![Github cloning](assets/2.jpg)
 
 ### Install Dependencies
 
@@ -93,6 +94,7 @@ WATSONX_PROJECT_ID=<your_watsonx_project_id>
 2. **Select Model and Parameters**: Choose a Watsonx model and configure settings like output tokens and decoding methods.
 3. **Ask Questions**: Enter queries in the chat input to retrieve answers based on the uploaded document.
 
+![How to use](assets/3.jpg)
 ---
 
 ## Project Structure
