@@ -1,0 +1,30 @@
+# macOS-specific files
+.DS_Store
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db
+
+# Python-specific files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+env/
+.env/
+.env
+
+# PDF Files
+*.pdf
+
+# IDE-specific files
+.idea/
+*.iml
+.vscode/
